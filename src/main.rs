@@ -1,16 +1,20 @@
 use rusqlite::{Connection, params};
 use std::io::BufRead;
 use std::io::Write;
+use std::time::Instant;
 use std::{
     env, fs, io,
     path::{Path, PathBuf},
 };
 
 fn main() {
+    let start = Instant::now();
     if let Err(err) = try_main() {
         eprintln!("Error: {:#?}", err);
         std::process::exit(1);
     }
+    let elapsed = start.elapsed();
+    eprintln!("Running time: {:?}", elapsed);
 }
 
 fn try_main() -> eyre::Result<()> {
