@@ -22,3 +22,7 @@ target/
 *.tsv
 *.txt
 *.tar.gz
+
+.venv/
+
+*.dat
