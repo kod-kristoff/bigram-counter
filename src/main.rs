@@ -47,6 +47,7 @@ fn walk_dir(dir: &Path, conn: &Connection) -> eyre::Result<()> {
     for entry in fs::read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
+
         let meta = fs::metadata(&path)?;
 
         if meta.is_dir() {
@@ -54,6 +55,11 @@ fn walk_dir(dir: &Path, conn: &Connection) -> eyre::Result<()> {
             continue;
         }
         if meta.is_file() {
+            if let Some(file_stem) = path.as_path().file_stem() {
+                if file_stem.to_string_lossy() == ".DS_Store" {
+                    continue;
+                }
+            }
             process_file(&path, conn)?;
             continue;
         }
