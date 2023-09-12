@@ -1,5 +1,6 @@
 use rusqlite::{params, Connection};
 use std::io::BufRead;
+use std::io::Read;
 use std::io::Write;
 use std::time::Instant;
 use std::{
@@ -27,7 +28,7 @@ fn try_main() -> eyre::Result<()> {
     let conn = Connection::open("./bigrams.db3")?;
     setup_db(&conn)?;
     walk_dir(&dir, &conn)?;
-    dump_freqs(&output, &conn)?;
+    // dump_freqs(&output, &conn)?;
     Ok(())
 }
 
@@ -60,13 +61,22 @@ fn walk_dir(dir: &Path, conn: &Connection) -> eyre::Result<()> {
                     continue;
                 }
             }
-            process_file(&path, conn)?;
+            // process_file(&path, conn)?;
+            count_lines(&path)?;
             continue;
         }
     }
     Ok(())
 }
 
+fn count_lines(path: &Path) -> eyre::Result<()> {
+    eprintln!("counting lines in {} ...", path.display());
+    let mut file = fs::File::open(path)?;
+    let mut reader = io::BufReader::new(file);
+    let line_count = reader.lines().count();
+    eprintln!("  line count: {}", line_count);
+    Ok(())
+}
 fn process_file(path: &Path, conn: &Connection) -> eyre::Result<()> {
     eprintln!("processing file {} ...", path.display());
     let mut select_stmt = conn.prepare_cached("SELECT count FROM freqs WHERE word = ?1")?;
@@ -74,11 +84,13 @@ fn process_file(path: &Path, conn: &Connection) -> eyre::Result<()> {
         conn.prepare_cached("INSERT OR IGNORE INTO freqs (word, count) VALUES (?1, ?2)")?;
     let mut update_word_count =
         conn.prepare_cached("UPDATE freqs SET count = ?2 WHERE word = ?1")?;
-    let file = fs::File::open(path)?;
-    let reader = io::BufReader::new(file);
+    let mut file = fs::File::open(path)?;
+    let mut reader = String::with_capacity(32_000_000);
+    file.read_to_string(&mut reader)?;
+    // let reader = io::BufReader::new(file);
     let mut total_file_count = 0;
     for (i, line) in reader.lines().enumerate() {
-        let line = line?;
+        // let line = line?;
         if i < 5 {
             eprintln!("skipping line: '{}'", line);
             if !line.starts_with("@") {
